@@ -1,0 +1,37 @@
+docker pull public.ecr.aws/lambda/provided
+docker run --entrypoint "/bin/bash" --name rlambda -it public.ecr.aws/lambda/provided
+
+### IN CONTAINER ###
+
+R_VERSION=4.1.0
+PATH="${PATH}:/opt/R/${R_VERSION}/bin/"
+
+yum -y update
+yum -y install wget git openssl-devel tar deltarpm
+yum -y update
+yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+wget https://cdn.rstudio.com/r/centos-7/pkgs/R-${R_VERSION}-1-1.x86_64.rpm
+yum -y install R-${R_VERSION}-1-1.x86_64.rpm
+rm R-${R_VERSION}-1-1.x86_64.rpm
+
+Rscript -e 'R.home(component="home")'
+Rscript -e 'install.packages(c("httr", "jsonlite", "logger", "remotes", "dplyr", "lubridate", "stringr", "purrr"), repos = "https://packagemanager.rstudio.com/all/__linux__/centos7/latest")'
+Rscript -e 'remotes::install_github("mdneuzerling/lambdr")'
+
+mkdir /lambda
+touch /lambda/example_runtime.R
+chmod 755 -R /lambda
+
+printf '#!/bin/sh\ncd /lambda\nRscript runtime.R' > /var/runtime/bootstrap
+chmod +x /var/runtime/bootstrap
+
+history > /command-history
+
+### OUTSIDE CONTAINER ###
+
+docker cp rlambda:/command-history ./command-history
+docker ps
+docker commit --author "Jimmy Briggs" rlambda ghcr.io/jimbrig/rlambda/rlambda:v1
+docker login ghcr.io --username jimbrig --password $GITHUB_TOKEN
+docker push ghcr.io/jimbrig/rlambda/rlambda:v1
+
