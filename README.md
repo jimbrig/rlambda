@@ -179,20 +179,13 @@ This provides a URI, the resource identifier of the created repository. The imag
 
 ```bash
 URI=594723403908.dkr.ecr.us-east-1.amazonaws.com/rlambda
-docker tag rlambda:v1 ${URI}/rlambda-base:v1
+docker tag rlambda:v1 ${URI}:latest
 aws ecr get-login-password | docker login --username AWS --password-stdin ${URI}
-docker push ${URI}/rlambda:v1
+docker push ${URI}:v1
 ```
-
-
-
-
-
-
 
 ##  Resources
 
 
 
 - The [lambdr](https://github.com/mdneuzerling/lambdr) R package
-- 
